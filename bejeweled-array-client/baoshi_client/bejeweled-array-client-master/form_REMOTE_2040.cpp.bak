@@ -1,0 +1,213 @@
+﻿#include "form.h"
+#include "ui_form.h"
+#include "QMessageBox"
+#include "QTextCodec.h"
+#include <QIcon>
+#include <QHBoxLayout>
+#include <QMouseEvent>
+#include "arrayMethod.h"
+#include <cstdlib>
+#include <ctime>
+QGraphicsScene *scene_1;
+Form::Form(QWidget *parent) :
+    QWidget(parent),
+    ui(new Ui::Form)
+{
+    this->setWindowTitle("宝石迷阵");
+    this->setWindowIcon(QIcon(":/new/prefix1/ICON/13369429051CA2411D99F227A90D19CB9BE4EA10C2.jpg"));
+    ui->setupUi(this);
+    socket=new QTcpSocket();
+
+    //连接信号槽
+    QObject::connect(socket, &QTcpSocket::readyRead, this, &Form::socket_Read_Data);
+    QObject::connect(socket, &QTcpSocket::disconnected, this, &Form::socket_Disconnected);
+
+    ui->lineEdit_Ip->setText("127.0.0.1");
+    ui->pushButton_Listen->setText("OpenServer");
+
+    //添加menu
+    auto layout = new QHBoxLayout(this);
+    QMenuBar *menubar = new QMenuBar(this);
+    layout->setMenuBar(menubar);
+    music_on = new QAction(this);
+    music_on->setText("音乐开");
+    connect(music_on, SIGNAL(triggered()), this,SLOT(slot_music_on()));
+    music_off = new QAction(this);
+    music_off->setText("音乐关");
+    connect(music_off, SIGNAL(triggered()), this, SLOT(slot_music_off()));
+    music_turn = new QAction(this);
+    music_turn->setText("更换音乐");
+    connect(music_turn, SIGNAL(triggered()), this, SLOT(slot_music_change()));
+    hint = new QAction(this);
+    hint->setText("详细信息");
+    connect(hint, SIGNAL(triggered()), this, SLOT(slot_hint()));
+    music = new QMenu("音乐");
+    music->addAction(music_on);
+    music->addAction(music_off);
+    music->addAction(music_turn);
+    menubar->addMenu(music);
+    help = new QMenu("帮助");
+    help->addAction(hint);
+    menubar->addMenu(help);
+    layout->addWidget(this);
+    layout->addWidget(menubar);
+
+
+    //测试宝石
+    scene_1 = new QGraphicsScene(ui->graphicsView);
+    scene_1->setSceneRect(-8,63,1045,775);
+    ui->graphicsView->setScene(scene_1);
+
+    int seed = time(0);
+    srand(seed);
+    updateBaoshi(a);
+    for(int i = 0; i <8; i++){
+        for(int j = 0; j < 8; j++){
+            jew[i][j] = new Jewel(i,j,a[i][j]);
+            scene_1->addWidget(jew[i][j]->getbutton());
+        }
+    }
+
+    //绑定槽函数
+    for(int i = 0; i <8; i++){
+        for(int j = 0; j < 8; j++){
+           connect(jew[i][j]->getbutton(),SIGNAL(clicked(bool)),this,SLOT(send()));
+        }
+    }
+}
+
+
+Form::~Form()
+{
+    server->close();
+    server->deleteLater();
+    delete ui;
+}
+
+//连接
+void Form::on_pushButton_Listen_clicked()
+{
+    if(ui->pushButton_Listen->text() == tr("OpenServer"))
+    {
+        server = new QTcpServer();
+
+        //连接信号槽
+        connect(server,&QTcpServer::newConnection,this,&Form::server_New_Connect);
+//        ui->textEdit_Recv->insertPlainText("OpenSuccessfully\n");
+        //从输入框获取端口号
+//        int port = ui->lineEdit_Port->text().toInt();
+        int port  = 6000;
+
+        //监听指定的端口
+        if(!server->listen(QHostAddress::Any, port))
+        {
+            //若出错，则输出错误信息
+            QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
+            QMessageBox::information(this,tr("消息"),tr("打开服务器失败！"),QMessageBox::Yes);
+            return;
+        }
+        //修改按键文字
+       ui->pushButton_Listen->setText("CloseServer");
+       QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
+       QMessageBox::information(this,tr("消息"),tr("打开服务器成功！"),QMessageBox::Yes);
+    }
+    else
+    {
+        server->deleteLater();
+        //取消侦听
+        server->close();
+        //修改按键文字
+        ui->pushButton_Listen->setText("OpenServer");
+        //发送按键失能
+//        ui->pushButton_Send->setEnabled(false);
+//        ui->textEdit_Recv->insertPlainText("CloseSuccessfully\n");
+    }
+
+}
+
+
+void Form::send(){
+    Jewel* btn = (Jewel*)sender();// 获取到了发送该信号按钮的指针
+    qDebug()<<btn->getX();
+    qDebug()<<btn->getY();
+    selectX1 = btn->getX();
+    selectY1 = btn->getY();
+    jew[btn->getX()][btn->getY()]->setStyleSheet("QPushButton{border:none;background:transparent;border:2px solid #000000;}");
+
+}
+//信息发送的函数,等ui写好就可以用了
+//void Form::on_pushButton_Send_clicked()
+//{
+
+//    ui->textEdit_Recv->insertPlainText(tr("服务器：")+ui->textEdit_Send->toPlainText()+"\n");
+//    socket->write(ui->textEdit_Send->toPlainText().toLocal8Bit());
+//    socket->flush();
+//    ui->textEdit_Send->setText("");
+//}
+
+void Form::server_New_Connect()
+{
+    //获取客户端连接
+    socket = server->nextPendingConnection();
+    //连接QTcpSocket的信号槽，以读取新数据
+    QObject::connect(socket, &QTcpSocket::readyRead, this, &Form::socket_Read_Data);
+    QObject::connect(socket, &QTcpSocket::disconnected, this, &Form::socket_Disconnected);
+    //发送按键使能
+//    ui->pushButton_Send->setEnabled(true);
+
+}
+
+void Form::socket_Read_Data()
+{
+    QByteArray buffer;
+    //读取缓冲区数据
+    buffer = socket->readAll();
+    if(!buffer.isEmpty())
+    {
+        QString str = QString::fromLocal8Bit(buffer);
+//        ui->textEdit_Recv->insertPlainText("帅葛哥说："+str+"\n");
+    }
+}
+
+void Form::socket_Disconnected()
+{
+    //发送按键失能
+// todo 等待判定
+}
+
+//实现槽函数
+void Form::slot_music_on()
+{
+
+}
+
+void Form::slot_music_off()
+{
+
+}
+
+void Form::slot_music_change()
+{
+
+}
+
+void Form::slot_hint()
+{
+
+}
+
+
+
+void Form::mouseMoveEvent(QMouseEvent *ev){
+   //todo
+}
+
+void Form::mousePressEvent(QMouseEvent *ev){
+
+}
+
+void Form::mouseReleaseEvent(QMouseEvent *ev){
+    //todo
+}
+
+

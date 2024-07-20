@@ -1,0 +1,62 @@
+﻿#include "jewel.h"
+Jewel::Jewel(int x, int y, int type,int where , QWidget *parent):QPushButton(parent)
+{
+    this->x = x;
+    this->where = where;
+    this->y = y;
+    this->type = type;
+    this->setCheckable(true);
+    if(where == 1){
+        this->setGeometry(67*(y+1)+175,67*(x+1)+36,61,61);//这里的坐标可能需要改为数组下标然后使用计算函数得到坐标 xyh
+    }
+    else{
+        this->setGeometry(67*(y+1)+879,67*(x+1)+36,61,61);
+    }
+    QPixmap *pic = new QPixmap();
+    QString pic_path = ":/new/prefix1/media/media/"+QString::number(type)+".png";     //加载图片路径    
+    pic->load(pic_path);    
+    pic->scaled(63,63);
+    QIcon buttonIcon(*pic);
+    this->setIcon(buttonIcon);
+    this->setIconSize(pic->rect().size());
+    this->setFixedSize(pic->rect().size());
+    this->setStyleSheet("QPushButton{border:none;background:transparent;}"  //将button设置为透明
+                        "QPushButton:hover {border:none;background:transparent;border:1.5px solid #66FFFF;}"
+                        "QPushButton:pressed{border:none;background-color:rgb(204,204,204);border-style:inset;}");
+
+    //链接信号槽 gxc
+     connect(this,SIGNAL(clicked(bool)),this,SLOT(sendPosInfo_onclicked()));
+
+}
+
+void Jewel::sendPosInfo_onclicked(){
+    //这个x 和 y还需要处理
+    //todo
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8c185849607417502d1265435b710b430db55d73
+    emit jewPosSignal(x,y);
+
+}
+
+void Jewel::changePicture(int x){
+    QPixmap *pic = new QPixmap();
+    QString pic_path = ":/new/prefix1/media/media/"+QString::number(x)+".png";     //加载图片路径
+    pic->load(pic_path);
+    pic->scaled(63,63);
+    QIcon buttonIcon(*pic);
+    this->setIcon(buttonIcon);
+}
+
+Jewel::~Jewel()
+{
+    delete(this);
+}
+
+
+QPushButton* Jewel::getbutton()
+{
+    return this;
+}
+

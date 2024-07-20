@@ -1,0 +1,30 @@
+<RCC>
+    <qresource prefix="/new/prefix1">
+        <file>music/excellent.ogg</file>
+        <file>music/amazing.ogg</file>
+        <file>music/releax.ogg</file>
+        <file>music/3counts.mp3</file>
+        <file>music/unbelievable.mp3</file>
+        <file>music/great.mp3</file>
+        <file>music/fail.wav</file>
+        <file>music/match.wav</file>
+        <file>music/match2.wav</file>
+        <file>music/start_timi.wav</file>
+        <file>music/click.wav</file>
+        <file>music/1.mp3</file>
+        <file>music/2.mp3</file>
+        <file>music/3.mp3</file>
+        <file>music/match1.mp3</file>
+        <file>music/match2.mp3</file>
+        <file>music/match3.mp3</file>
+        <file>music/combo_2.wav</file>
+        <file>music/combo_3.wav</file>
+        <file>music/combo_4.wav</file>
+        <file>music/combo_5.wav</file>
+        <file>music/combo_6.wav</file>
+        <file>music/combo_7.wav</file>
+        <file>music/lose.mp3</file>
+        <file>music/5538.wav</file>
+        <file>media/media/favicon.ico</file>
+    </qresource>
+</RCC>

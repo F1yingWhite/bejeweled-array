@@ -1,0 +1,915 @@
+﻿#include "form.h"
+#include "ui_form.h"
+#include "QMessageBox"
+#include "QTextCodec.h"
+#include <QIcon>
+#include <QDebug>
+#include <QString>
+#include <QHBoxLayout>
+#include <QMouseEvent>
+#include<QSignalMapper>
+#include <cstdlib>
+#include <ctime>
+#include"animation.h"
+#include<QTime>
+#include<QParallelAnimationGroup>
+using namespace std;
+QGraphicsScene *scene_1;
+QGraphicsScene *scene_2;
+
+Form::Form(QWidget *parent) :
+    QWidget(parent),
+    ui(new Ui::Form)
+{
+    this->setWindowTitle("宝石迷阵");
+    this->setWindowIcon(QIcon(":/new/prefix1/ICON/13369429051CA2411D99F227A90D19CB9BE4EA10C2.jpg"));
+    ui->setupUi(this);
+    socket=new QTcpSocket();
+    ui->timer->setStyleSheet("QLCDNumber{border:none;background:transparent;}");
+
+    //连接信号槽
+    QObject::connect(socket, &QTcpSocket::readyRead, this, &Form::socket_Read_Data);
+    QObject::connect(socket, &QTcpSocket::disconnected, this, &Form::socket_Disconnected);
+
+    ui->lineEdit_Ip->setText("127.0.0.1");
+    ui->pushButton_Listen->setText("OpenServer");
+
+    //添加menu
+    auto layout = new QHBoxLayout(this);
+    QMenuBar *menubar = new QMenuBar(this);
+    layout->setMenuBar(menubar);
+    Qtime = new QAction(this);                    //比赛时间
+    Qtime->setText("时间");
+    connect(Qtime, SIGNAL(triggered()), this,SLOT(slot_set_time()));
+    music_on = new QAction(this);
+    music_on->setText("音乐开");
+    connect(music_on, SIGNAL(triggered()), this,SLOT(slot_music_on()));
+    music_off = new QAction(this);
+    music_off->setText("音乐关");
+    connect(music_off, SIGNAL(triggered()), this, SLOT(slot_music_off()));
+    music_turn = new QAction(this);
+    music_turn->setText("更换音乐");
+    connect(music_turn, SIGNAL(triggered()), this, SLOT(slot_music_change()));
+    hint = new QAction(this);
+    hint->setText("详细信息");
+    connect(hint, SIGNAL(triggered()), this, SLOT(slot_hint()));
+    setting = new QMenu("设置");
+    setting->addAction(music_on);
+    setting->addAction(music_off);
+    setting->addAction(music_turn);
+    setting->addAction(Qtime);
+    menubar->addMenu(setting);
+    help = new QMenu("帮助");
+    help->addAction(hint);
+    menubar->addMenu(help);
+    layout->addWidget(this);
+    layout->addWidget(menubar);
+
+
+    //测试己方宝石
+    scene_1 = new QGraphicsScene(ui->graphicsView);
+    scene_1->setSceneRect(0,67,830,620);
+    ui->graphicsView->setScene(scene_1);
+
+    //添加对方宝石,
+    scene_2 = new QGraphicsScene(ui->graphicsView_2);
+    scene_2->setSceneRect(900,67,630,620);
+    ui->graphicsView_2->setScene(scene_2);
+
+    seed = time(0);
+    srand(seed);
+    updateBaoshi(a);
+        for(int i = 0; i <8; i++){
+            for(int j = 0; j < 8; j++){
+                jew[i][j] = new Jewel(i,j,a[i][j],1);
+                scene_1->addWidget(jew[i][j]->getbutton());
+            }
+        }
+        if(xiaochu(a)){
+
+            xialuo(a,1);
+<<<<<<< HEAD
+            updateBaoshi(a);
+            while(xiaochu(a)!=0){
+                 xialuo(a,1);
+                 updateBaoshi(a);
+            }
+            for(int i = 0;i<8;i++){
+                for(int j = 0; j<8;j++){
+                    jew[i][j]->changePicture(a[i][j]);
+                }
+=======
+//            updateBaoshi(a);
+            while(xiaochu(a)!=0){
+                 xialuo(a,1);
+//                 updateBaoshi(a);
+>>>>>>> 15ff1fbf27d20b155cd7902649e198dbe7d98dd5
+            }
+//            for(int i = 0;i<8;i++){
+//                for(int j = 0; j<8;j++){
+//                    jew[i][j]->changePicture(a[i][j]);
+//                }
+//            }
+        }
+        //绑定槽函数
+        for(int i = 0; i <8; i++){
+            for(int j = 0; j < 8; j++){
+               connect(jew[i][j],SIGNAL(jewPosSignal(int ,int )),this,SLOT(send(int ,int )));
+               connect(jew[i][j],SIGNAL(jewPosSignal(int ,int )),this,SLOT(change(int ,int )));
+            }
+        }
+
+        //添加对方宝石
+        updateBaoshi(a2);
+        for(int i = 0; i <8; i++){
+            for(int j = 0; j < 8; j++){
+                jew2[i][j] = new Jewel(i,j,a2[i][j],2);
+                scene_2->addWidget(jew2[i][j]->getbutton());
+            }
+        }
+        if(xiaochu(a2)){
+            xialuo(a2,1);
+<<<<<<< HEAD
+            updateBaoshi(a2);
+            while(xiaochu(a2)!=0){
+                 xialuo(a2,1);
+                 updateBaoshi(a2);
+=======
+//            updateBaoshi(a2);
+            while(xiaochu(a2)!=0){
+                 xialuo(a2,1);
+//                 updateBaoshi(a2);
+>>>>>>> 15ff1fbf27d20b155cd7902649e198dbe7d98dd5
+            }
+            for(int i = 0;i<8;i++){
+                for(int j = 0; j<8;j++){
+                    jew2[i][j]->changePicture(a2[i][j]);
+                }
+            }
+        }
+        for(int i = 0;i<8;i++){
+            for(int j = 0; j<8;j++){
+                jew[i][j]->changePicture(a[i][j]);
+            }
+        }
+
+    //初始化音乐
+
+    player_backMusic1->setMedia(QUrl("qrc:/new/prefix1/media/media/3.ogg"));
+    player_backMusic2->setMedia(QUrl("qrc:/new/prefix1/media/media/1.ogg"));
+    player_backMusic3->setMedia(QUrl("qrc:/new/prefix1/music/releax.ogg"));
+    player_delete1->setMedia(QUrl("qrc:/new/prefix1/music/unbelievable.mp3"));
+    player_delete2->setMedia(QUrl("qrc:/new/prefix1/music/amazing.ogg"));
+    player_delete3->setMedia(QUrl("qrc:/new/prefix1/music/excellent.ogg"));
+    player_delete4->setMedia(QUrl("qrc:/new/prefix1/music/great.mp3"));
+    player_match1->setMedia(QUrl("qrc:/new/prefix1/music/match.wav"));
+    player_click->setMedia(QUrl("qrc:/new/prefix1/music/click.wav"));
+    start_timi->setMedia(QUrl("qrc:/new/prefix1/music/start_timi.wav"));
+    fail->setMedia(QUrl("qrc:/new/prefix1/music/fail.wav"));
+    player_backMusic2->setVolume(50);
+    player_click->setVolume(30);
+    player_backMusic1->setVolume(50);
+    player_backMusic3->setVolume(60);
+    player_match1->setVolume(50);
+    player_delete1->setVolume(70);
+    player_backMusics.append(player_backMusic1);
+    player_backMusics.append(player_backMusic2);
+    player_backMusics.append(player_backMusic3);
+    music_num = 3;
+    cur_music =0;
+    QPixmap pixmap;
+        // 光标图片 需要注意注意图片的大小 不然会比较难看
+    pixmap.load(":/new/prefix1/media/media/handCursor.png");
+    QCursor cursor(pixmap);
+    setCursor(cursor);
+
+
+
+}
+
+
+Form::~Form()
+{
+    server->close();
+    server->deleteLater();
+    delete ui;
+}
+
+//连接
+void Form::on_pushButton_Listen_clicked()
+{
+    if(ui->pushButton_Listen->text() == tr("OpenServer"))
+    {
+        server = new QTcpServer();
+
+        //连接信号槽
+        connect(server,&QTcpServer::newConnection,this,&Form::server_New_Connect);
+//        ui->textEdit_Recv->insertPlainText("OpenSuccessfully\n");
+        //从输入框获取端口号
+//        int port = ui->lineEdit_Port->text().toInt();
+        int port  = 6000;
+        //监听指定的端口
+        if(!server->listen(QHostAddress::Any, port))
+        {
+            //若出错，则输出错误信息
+            QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
+            QMessageBox::information(this,tr("消息"),tr("打开服务器失败！"),QMessageBox::Yes);
+            return;
+        }
+        //修改按键文字
+       ui->pushButton_Listen->setText("CloseServer");
+       QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
+       QMessageBox::information(this,tr("消息"),tr("打开服务器成功！"),QMessageBox::Yes);
+    }
+    else
+    {
+        server->deleteLater();
+        //取消侦听
+        server->close();
+        //修改按键文字
+        ui->pushButton_Listen->setText("OpenServer");
+        //发送按键失能
+//        ui->pushButton_Send->setEnabled(false);
+//        ui->textEdit_Recv->insertPlainText("CloseSuccessfully\n");
+    }
+
+}
+
+void Form::change(int x,int y){
+    QMediaPlayer* tmp= new QMediaPlayer();
+    tmp->setMedia(QUrl("qrc:/new/prefix1/music/match2.wav"));
+    tmp->setVolume(30);
+    tmp->play();
+    Jewel* btn = (Jewel*)sender();// 获取到了发送该信号按钮的指针
+    if(btn->where == 1){
+        if(selectX1 == -1){
+            selectX1=btn->getX();
+            selectY1=btn->getY();
+            jew[selectX1][selectY1]->setStyleSheet("QPushButton{border:none;background:transparent;border:3px solid #66FFFF;}");//改变样式表
+        }
+        else if(selectX2 == -1){
+            selectX2 = btn->getX();
+            selectY2 = btn->getY();
+            if((selectX1==selectX2-1&&selectY2==selectY1)||(selectX1==selectX2+1&&selectY2==selectY1)||(selectX1==selectX2&&selectY2-1==selectY1)||(selectX1==selectX2&&selectY2+1==selectY1)){
+                jew[selectX2][selectY2]->setStyleSheet("QPushButton{border:none;background:transparent;border:3px solid #66FFFF;}");
+                int temp = a[selectX1][selectY1];
+                a[selectX1][selectY1] = a[selectX2][selectY2];
+                a[selectX2][selectY2] = temp;//交换矩阵
+
+                if(xiaochu(a)){
+
+                    Animation *anima = new Animation(jew[selectX1][selectY1]);
+                    anima->setValue(QPoint(67*(jew[selectX1][selectY1]->getY()+1)+175, (67*jew[selectX1][selectY1]->getX()+1)+102),QPoint(67*(jew[selectX2][selectY2]->getY()+1)+175, (67*jew[selectX2][selectY2]->getX()+1)+102));
+                    Animation *anima_2 = new Animation(jew[selectX2][selectY2]);
+                    anima_2->setValue(QPoint(67*(jew[selectX2][selectY2]->getY()+1)+175, (67*jew[selectX2][selectY2]->getX()+1)+102),QPoint(67*(jew[selectX1][selectY1]->getY()+1)+175, (67*jew[selectX1][selectY1]->getX()+1)+102));
+                    QParallelAnimationGroup *group = new QParallelAnimationGroup;
+                    group->addAnimation(anima->getObj());
+                    group->addAnimation(anima_2->getObj());
+                    group->start();
+
+                    QTime time;
+                    time.start();
+                    while(time.elapsed() < 500){
+                    QCoreApplication::processEvents();
+                    }
+
+                    Jewel *t = jew[selectX1][selectY1];
+                    jew[selectX1][selectY1] = jew[selectX2][selectY2];
+                    jew[selectX2][selectY2] = t;
+                    jew[selectX1][selectY1]->changePos(jew[selectX2][selectY2]);
+                    //音乐播放逻辑
+                    int i =1;
+                    player_delete1->play();//要改 播放低音
+
+                    xialuo(a,0);
+                    updateBaoshi(a);
+                    while(xiaochu(a)!=0){
+                        //判断连续播放 中音高音
+                        i++;
+                        if(i ==2){
+                            ;
+                        }else if(i>=3){
+                            ;
+                        }
+                         xialuo(a,0);
+                         updateBaoshi(a);
+                    }
+                    for(int i = 0;i<8;i++){
+                        for(int j = 0; j<8;j++){
+                            jew[i][j]->changePicture(a[i][j]);
+                        }
+                    }
+                    //奖励音效
+                    if(i>=2){
+                        player_delete2->play();
+                    }
+                }
+                else{                    
+                    int temp = a[selectX1][selectY1];
+                    a[selectX1][selectY1] = a[selectX2][selectY2];
+                    a[selectX2][selectY2] = temp;//不能这样做，换回来
+
+                    QParallelAnimationGroup *group = new QParallelAnimationGroup;
+                    Animation *anima = new Animation(jew[selectX1][selectY1]);
+                    anima->setValue(QPoint(67*(jew[selectX1][selectY1]->getY()+1)+175, (67*jew[selectX1][selectY1]->getX()+1)+102),QPoint(67*(jew[selectX2][selectY2]->getY()+1)+175, (67*jew[selectX2][selectY2]->getX()+1)+102));
+                    Animation *anima_2 = new Animation(jew[selectX2][selectY2]);
+                    anima_2->setValue(QPoint(67*(jew[selectX2][selectY2]->getY()+1)+175, (67*jew[selectX2][selectY2]->getX()+1)+102),QPoint(67*(jew[selectX1][selectY1]->getY()+1)+175, (67*jew[selectX1][selectY1]->getX()+1)+102));
+                    jew[selectX1][selectY1]->changePos(jew[selectX2][selectY2]);
+                    group->addAnimation(anima->getObj());
+                    group->addAnimation(anima_2->getObj());
+                    group->start();
+
+                    QTime time;
+                    time.start();
+                    while(time.elapsed() < 700){
+                    QCoreApplication::processEvents();
+                    }
+
+                        QParallelAnimationGroup *group_1 = new QParallelAnimationGroup;
+                        Animation *anima_3 = new Animation(jew[selectX1][selectY1]);
+                        anima_3->setValue(QPoint(67*(jew[selectX1][selectY1]->getY()+1)+175, (67*jew[selectX1][selectY1]->getX()+1)+102),QPoint(67*(jew[selectX2][selectY2]->getY()+1)+175, (67*jew[selectX2][selectY2]->getX()+1)+102));
+                        Animation *anima_4 = new Animation(jew[selectX2][selectY2]);
+                        anima_4->setValue(QPoint(67*(jew[selectX2][selectY2]->getY()+1)+175, (67*jew[selectX2][selectY2]->getX()+1)+102),QPoint(67*(jew[selectX1][selectY1]->getY()+1)+175, (67*jew[selectX1][selectY1]->getX()+1)+102));
+                        group_1->addAnimation(anima_3->getObj());
+                        group_1->addAnimation(anima_4->getObj());
+                        group_1->start();
+
+                        QTime time_1;
+                        time_1.start();
+                        while(time_1.elapsed() < 500){
+                        QCoreApplication::processEvents();
+                        }
+
+                        jew[selectX1][selectY1]->changePos(jew[selectX2][selectY2]);
+
+                }
+                //动画
+
+                //重置样式表
+                jew[selectX2][selectY2]->setStyleSheet("QPushButton{border:none;background:transparent;}");
+                jew[selectX1][selectY1]->setStyleSheet("QPushButton{border:none;background:transparent;}");
+                selectX1 = selectX2 = selectY1 = selectY2 = -1;
+            }
+            else{
+                jew[selectX1][selectY1]->setStyleSheet("QPushButton{border:none;background:transparent;}");
+                selectX1=btn->getX();
+                selectY1=btn->getY();
+                jew[selectX1][selectY1]->setStyleSheet("QPushButton{border:none;background:transparent;border:3px solid #66FFFF;}");
+                selectX2 = selectY2 = -1;
+            }
+        }
+    }
+}
+
+void Form::remoteChange(int x,int y){
+    Jewel* btn = jew2[x][y];// 获取到了发送该信号按钮的指针
+    if(btn->where == 2){
+        if(selectX12 == -1){
+            selectX12=btn->getX();
+            selectY12=btn->getY();
+            jew2[selectX12][selectY12]->setStyleSheet("QPushButton{border:none;background:transparent;border:3px solid #66FFFF;}");//改变样式表
+        }
+        else if(selectX22 == -1){
+            selectX22 = btn->getX();
+            selectY22 = btn->getY();
+            if((selectX12==selectX22-1&&selectY22==selectY12)||(selectX12==selectX22+1&&selectY22==selectY12)||(selectX12==selectX22&&selectY22-1==selectY12)||(selectX12==selectX22&&selectY22+1==selectY12)){
+                jew2[selectX22][selectY22]->setStyleSheet("QPushButton{border:none;background:transparent;border:3px solid #66FFFF;}");
+                int temp = a2[selectX12][selectY12];
+                a2[selectX12][selectY12] = a2[selectX22][selectY22];
+                a2[selectX22][selectY22] = temp;//交换矩阵
+
+                if(xiaochu(a2)){
+
+                    Animation *anima = new Animation(jew2[selectX12][selectY12]);
+                    anima->setValue(QPoint(67*(jew2[selectX12][selectY12]->getY()+1)+879, (67*jew2[selectX12][selectY12]->getX()+1)+102),QPoint(67*(jew2[selectX22][selectY22]->getY()+1)+879, (67*jew2[selectX22][selectY22]->getX()+1)+102));
+                    Animation *anima_2 = new Animation(jew2[selectX22][selectY22]);
+                    anima_2->setValue(QPoint(67*(jew2[selectX22][selectY22]->getY()+1)+879, (67*jew2[selectX22][selectY22]->getX()+1)+102),QPoint(67*(jew2[selectX12][selectY12]->getY()+1)+879, (67*jew2[selectX12][selectY12]->getX()+1)+102));
+                    QParallelAnimationGroup *group = new QParallelAnimationGroup;
+                    group->addAnimation(anima->getObj());
+                    group->addAnimation(anima_2->getObj());
+                    group->start();
+
+                    QTime time;
+                    time.start();
+                    while(time.elapsed() < 500){
+                    QCoreApplication::processEvents();
+                    }
+
+                    Jewel *t = jew2[selectX12][selectY12];
+                    jew2[selectX12][selectY12] = jew2[selectX22][selectY22];
+                    jew2[selectX22][selectY22] = t;
+                    jew2[selectX12][selectY12]->changePos(jew2[selectX22][selectY22]);
+
+
+                    xialuo(a2,0);
+                    updateBaoshi(a2);
+                    while(xiaochu(a2)!=0){
+                         xialuo(a2,0);
+                         updateBaoshi(a2);
+                    }
+
+                    for(int i = 0;i<8;i++){
+                        for(int j = 0; j<8;j++){
+                            jew2[i][j]->changePicture(a2[i][j]);
+                        }
+                    }
+                }
+                else{
+                    int temp = a2[selectX12][selectY12];
+                    a2[selectX12][selectY12] = a2[selectX22][selectY22];
+                    a2[selectX22][selectY22] = temp;//不能这样做，换回来
+
+                    QParallelAnimationGroup *group = new QParallelAnimationGroup;
+                    Animation *anima = new Animation(jew2[selectX12][selectY12]);
+                    anima->setValue(QPoint(67*(jew2[selectX12][selectY12]->getY()+1)+175, (67*jew2[selectX12][selectY12]->getX()+1)+102),QPoint(67*(jew2[selectX22][selectY22]->getY()+1)+175, (67*jew2[selectX22][selectY22]->getX()+1)+102));
+                    Animation *anima_2 = new Animation(jew2[selectX22][selectY22]);
+                    anima_2->setValue(QPoint(67*(jew2[selectX22][selectY22]->getY()+1)+175, (67*jew2[selectX22][selectY22]->getX()+1)+102),QPoint(67*(jew2[selectX12][selectY12]->getY()+1)+175, (67*jew2[selectX12][selectY12]->getX()+1)+102));
+                    jew2[selectX12][selectY12]->changePos(jew2[selectX22][selectY22]);
+                    group->addAnimation(anima->getObj());
+                    group->addAnimation(anima_2->getObj());
+                    group->start();
+
+                    QTime time;
+                    time.start();
+                    while(time.elapsed() < 700){
+                    QCoreApplication::processEvents();
+                    }
+
+                        QParallelAnimationGroup *group_1 = new QParallelAnimationGroup;
+                        Animation *anima_3 = new Animation(jew2[selectX12][selectY12]);
+                        anima_3->setValue(QPoint(67*(jew2[selectX12][selectY12]->getY()+1)+175, (67*jew2[selectX12][selectY12]->getX()+1)+102),QPoint(67*(jew2[selectX22][selectY22]->getY()+1)+175, (67*jew2[selectX22][selectY22]->getX()+1)+102));
+                        Animation *anima_4 = new Animation(jew2[selectX22][selectY22]);
+                        anima_4->setValue(QPoint(67*(jew2[selectX22][selectY22]->getY()+1)+175, (67*jew2[selectX22][selectY22]->getX()+1)+102),QPoint(67*(jew2[selectX12][selectY12]->getY()+1)+175, (67*jew2[selectX12][selectY12]->getX()+1)+102));
+                        group_1->addAnimation(anima_3->getObj());
+                        group_1->addAnimation(anima_4->getObj());
+                        group_1->start();
+
+                        QTime time_1;
+                        time_1.start();
+                        while(time_1.elapsed() < 500){
+                        QCoreApplication::processEvents();
+                        }
+
+                        jew2[selectX12][selectY12]->changePos(jew2[selectX22][selectY22]);
+
+                }
+                //动画
+
+
+
+                //重置样式表
+                jew2[selectX22][selectY22]->setStyleSheet("QPushButton{border:none;background:transparent;}");
+                jew2[selectX12][selectY12]->setStyleSheet("QPushButton{border:none;background:transparent;}");
+                selectX12 = selectX22 = selectY12 = selectY22 = -1;
+            }
+            else{
+                jew2[selectX12][selectY12]->setStyleSheet("QPushButton{border:none;background:transparent;}");
+                selectX12=btn->getX();
+                selectY12=btn->getY();
+                jew2[selectX12][selectY12]->setStyleSheet("QPushButton{border:none;background:transparent;border:3px solid #66FFFF;}");
+                selectX22 = selectY22 = -1;
+            }
+        }
+    }
+}
+
+void Form::send(int x, int y){
+    QString info = QString::number(x);
+    info.append(",").append(QString::number(y)).append(",");
+    socket->write(info.toLocal8Bit());
+    socket->flush();
+    this->ui->lineEdit_Ip->setText(info);
+ }
+//信息发送的函数,等ui写好就可以用了
+//void Form::on_pushButton_Send_clicked()
+//{
+
+//    ui->textEdit_Recv->insertPlainText(tr("服务器：")+ui->textEdit_Send->toPlainText()+"\n");
+//    socket->write(ui->textEdit_Send->toPlainText().toLocal8Bit());
+//    socket->flush();
+//    ui->textEdit_Send->setText("");
+//}
+
+void Form::server_New_Connect()
+{
+    //获取客户端连接
+    socket = server->nextPendingConnection();
+    //连接QTcpSocket的信号槽，以读取新数据
+    QObject::connect(socket, &QTcpSocket::readyRead, this, &Form::socket_Read_Data);
+    QObject::connect(socket, &QTcpSocket::disconnected, this, &Form::socket_Disconnected);
+
+        QString info = QString::number(seed);
+        qDebug()<<info<<endl;
+        socket->write(info.toLocal8Bit());
+        socket->flush();
+    isInit = true;
+
+    //发送按键使能
+//    ui->pushButton_Send->setEnabled(true);
+
+}
+
+void Form::socket_Read_Data()
+{
+    QByteArray buffer;
+    //读取缓冲区数据
+    buffer = socket->readAll();
+    if(!buffer.isEmpty())
+    {
+        QString str = QString::fromLocal8Bit(buffer);
+        QStringList strList = str.split(",");
+        QString ans = strList[0].append(" ").append(strList[1]);
+//        this->ui->lineEdit_Ip->setText(ans);
+        //伟大的许一涵实现了接口对接
+        qDebug()<<"传入前"<<strList[0]<<" "<<strList[1]<<endl;
+        if(str.at(0).isDigit()){
+            remoteChange(strList[0].left(1).toInt(),strList[1].toInt());
+        }
+//        std::cout<<"接收到了"<<str<<"\n";
+    }
+}
+
+void Form::socket_Disconnected()
+{
+    //发送按键失能
+// todo 等待判定
+}
+
+//实现槽函数
+void Form::slot_music_on()
+{
+     player_backMusics.at(cur_music)->play();
+}
+
+void Form::slot_music_off()
+{
+    player_backMusics.at(cur_music)->stop();
+}
+
+void Form::slot_music_change()
+{
+    player_backMusics.at(cur_music)->stop();
+    cur_music = (cur_music+1)%music_num;
+    player_backMusics.at(cur_music)->play();
+}
+
+void Form::slot_hint()
+{
+    QMessageBox message;
+//    message.setIcon(QMessageBox::Icon(QIcon(":/new/prefix1/ICON/-40badbd1560d9c06.jpg")));
+    message.setWindowTitle("help");
+    message.setIconPixmap(QPixmap(":/new/prefix1/media/media/help.png"));
+    message.exec();
+}
+
+void Form::slot_set_time()
+{
+}
+
+
+
+void Form::mouseMoveEvent(QMouseEvent *ev){
+   //todo
+}
+
+void Form::mousePressEvent(QMouseEvent *ev){
+
+}
+
+void Form::mouseReleaseEvent(QMouseEvent *ev){
+    //todo
+}
+
+//QWidget* Form::getUI()
+//{
+//    return widget;
+//}
+
+void Form::showBaoshi(int a[8][8]){
+    for(int i=0;i<8;i++){
+        for(int j=0;j<8;j++){
+            qDebug()<<a[i][j]<<" ";
+        }
+    }
+}
+
+void Form::updateBaoshi(int a[8][8]){//将0处补充为1-7的随机数
+    int i,j;
+    for(i=0;i<8;i++){
+        for(j=0;j<8;j++){
+            if(a[i][j]==0){
+                a[i][j]=rand()%7+1;
+            }
+        }
+    }
+}
+
+bool Form::checkBaoshiAfterChange(int a[8][8]){//判断交换后全局内是否可以消去，这个函数供下面这个函数使用，调用下面这个
+    bool flag = false;
+    for(int i = 0; i < 8; i++){
+        for(int j = 0; j < 8; j++){
+            if(i < 6 && a[i][j] == a[i+1][j] && a[i][j] == a[i+2][j]){
+                flag = true;
+            }
+            if(j<6 && a[i][j] == a[i][j+1] && a[i][j] == a[i][j+2]){
+                flag = true;
+            }
+        }
+    }
+    return flag;
+}
+
+void Form::fuzhiArray(int b[8][8],int a[8][8]){//将b复制给a
+    for(int i=0;i<8;i++){
+        for(int j=0;j<8;j++){
+            a[i][j]=b[i][j];
+        }
+    }
+}
+
+bool Form::checkBaoshi(int a[8][8]){//判断交换后是否可以消除，返回true or false
+    int b[8][8];
+    Jewel *t;
+    int temp;
+    bool flag = false;
+    fuzhiArray(a,b);
+    for(int i = 0; i < 8; i++){
+        for(int j = 0; j < 8; j++){
+            if(i != 7){
+                temp = b[i][j];//向右交换
+                b[i][j] = b[i+1][j];
+                b[i+1][j] = temp;
+                if(checkBaoshiAfterChange(b)){
+                    flag = true;
+                    break;
+                }
+                b[i+1][j] = b[i][j];
+                b[i][j] = temp;                
+            }
+            if(i != 0){
+                temp = b[i][j];//向左交换
+                b[i][j] = b[i-1][j];
+                b[i-1][j] = temp;                
+                if(checkBaoshiAfterChange(b)){
+                    flag = true;
+                    break;
+                }                
+                b[i-1][j] = b[i][j];
+                b[i][j] = temp;
+            }
+            if(j != 0){
+                temp = b[i][j];//向上交换
+                b[i][j] = b[i][j-1];
+                b[i][j-1] = temp;
+
+
+
+                if(checkBaoshiAfterChange(b)){
+                    flag = true;
+                    break;
+                }                
+                b[i][j-1] = b[i][j];
+                b[i][j] = temp;
+            }
+            if(j != 7){
+                temp = b[i][j];//向下交换
+                b[i][j] = b[i][j+1];
+                b[i][j+1] = temp;                
+
+                if(checkBaoshiAfterChange(b)){
+                    flag = true;
+                    break;
+                }                
+                b[i][j+1] = b[i][j];
+                b[i][j] = temp;
+            }
+        }
+        if(flag){
+            break;
+        }
+    }
+    return flag;
+}
+
+void  Form::bian0(int a[8][8],int x,int y){//将一块联通区变为0，被下面的函数使用
+    int value = a[x][y];
+    a[x][y] = 0;
+    if(a[x-1][y] == value && x-1>=0) bian0(a,x-1,y);
+    if(a[x+1][y] == value && x+1 < 8) bian0(a,x+1,y);
+    if(a[x][y-1] == value && y-1 >= 0) bian0(a,x,y);
+    if(a[x][y+1] == value && y+1 < 8) bian0(a,x,y+1);
+}
+
+int Form::xiaochu(int a[8][8]){//消去宝石
+    int count = 0;
+    for(int i = 0; i < 8; i++){
+        for(int j = 0; j < 8; j++){
+            if(i < 6 && abs(a[i][j]) == abs(a[i+1][j]) && abs(a[i][j]) == abs(a[i+2][j])){
+                a[i][j] = -abs(a[i][j]);
+                a[i+1][j] = -abs(a[i+1][j]);
+                a[i+2][j] = -abs(a[i+2][j]);
+            }
+            if(j<6 && abs(a[i][j]) == abs(a[i][j+1]) && abs(a[i][j]) == abs(a[i][j+2])){
+                a[i][j] = -abs(a[i][j]);
+                a[i][j+1] = -abs(a[i][j+1]);
+                a[i][j+2] = -abs(a[i][j+2]);
+            }
+        }
+    }
+//    //判断那些地方要生成特殊宝石,先判断>=4
+//    for(int i = 0; i < 8; i++){
+//        for(int j = 0; j < 8; j++){
+//            if(a[i][j] < 0){
+//                int lengthX = 0;
+//                for(int k = i; k < 8; k++){
+//                   if(a[k][j] == a[i][j]){
+//                       lengthX++;
+//                    }
+//                }
+//                int lengthY = 0;
+//                for(int k = j; k < 8; k++){
+//                    if (a[i][j] == a[i][k])
+//                    {
+//                        lengthY++;
+//                    }
+
+//                }
+//                if(lengthX >=5 || lengthY >= 5){
+//                    bian0(a,i,j);
+//                    a[i][j] = 8;//特殊爆炸宝石8
+//                }
+//                else{
+//                    if(lengthX == 4 || lengthY ==4){
+//                        bian0(a,i,j);
+//                        a[i][j] = 9;
+//                    }
+//                }
+
+//            }
+//        }
+//    }
+////在判断雷电宝石10
+//    for(int i = 2; i <6; i++){
+//        for(int j = 2; j < 6; j++){
+//            if(a[i][j]<0){
+//                if(((a[i][j] == a[i][j+1] && a[i][j] == a[i][j+1])||(a[i][j] == a[i][j-1] && a[i][j] == a[i][j-2]))
+//                        && ((a[i][j] == a[i-1][j] && a[i][j] == a[i-2][j])||(a[i][j] == a[i-1][j] && a[i][j] == a[i-2][j]))){
+//                    bian0(a,i,j);
+//                    a[i][j] = 10;
+//                }
+//            }
+//        }
+//    }
+    for(int  i = 0; i<8; i++){
+        for(int j = 0; j < 8; j++){
+            if(a[i][j] < 0){
+                a[i][j] = 0;
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+<<<<<<< HEAD
+void Form::xialuo(int a[8][8], int init){//用于实现下落
+            int x[8];
+            int y[8] = {0};//记录下落距离
+            for(int i=0;i<8;i++){
+                x[i] = -1;
+                y[i] = 0;
+            }
+            for(int j = 0; j < 8; j++){
+                for(int i = 7; i >= 0; i--){
+                    if(a[i][j] == 0){
+                        if(x[j] == -1){
+                            for(int k = i; k >= 0; k--){
+                                if(a[k][j] == 0){
+                                    y[j]++;
+                                }
+                            }
+                            x[j] = i;
+                        }
+                        for(int k = i; k >= 0; k--){
+                            if(a[k][j] != 0){
+                                a[i][j] = a[k][j];//从k，j下落到i，j
+                                a[k][j] = 0;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            Animation *anim1[64];
+            QParallelAnimationGroup *group = new QParallelAnimationGroup;
+            updateBaoshi(a);
+            for(int i = 0;i<8;i++){
+                for(int j = 0; j<8;j++){
+                    jew[i][j]->changePicture(a[i][j]);
+                }
+            }
+            if(init == 0){//只有
+                int index = 0;
+                for(int j=0;j<8;j++){
+                    for(int i = x[j];i>=0;i--){
+                        anim1[index] = new Animation(jew[i][j]);
+                        anim1[index]->settime(1000);
+                        anim1[index]->setValue(QPoint(67*(jew[i-y[j]][j]->getY()+1)+175, 67*(jew[i-y[j]][j]->getX()+1)+102), QPoint(67*(jew[i][j]->getY()+1)+175, 67*(jew[i][j]->getX()+1)+102));
+                        //anim1[index]->setEndValue(QRect(weizhiY(j), weizhiX(i)));
+
+                        jew[i-y[j]][j]->changePos(jew[i][j]);
+
+                        group->addAnimation(anim1[index]->getObj());
+                        index++;
+                    }
+                }
+                group->start();
+                QTime time;
+                time.start();
+                while(time.elapsed() < 1100){
+                    QCoreApplication::processEvents();
+                }
+            }
+
+
+//    for(int j = 0; j < 8; j++){
+//            for(int i = 7; i >= 0; i--){
+//                if(a[i][j] == 0){
+//                    for(int k = i; k >= 0; k--){
+//                        if(a[k][j] != 0){
+//                            a[i][j] = a[k][j];
+//                            //todo 这里可以添加下落动画
+//                            break;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+}
+=======
+int weizhiX(int x){
+    return 67*(x+1)+36;
+}
+
+int weizhiY(int y){
+    return 67*(y+1)+175;
+}
+
+void Form::xialuo(int a[8][8],int init){//用于实现下落
+        int x[8];
+        int y[8] = {0};//记录下落距离
+        for(int i=0;i<8;i++){
+            x[i] = -1;
+            y[i] = 0;
+        }
+        for(int j = 0; j < 8; j++){
+            for(int i = 7; i >= 0; i--){
+                if(a[i][j] == 0){
+                    if(x[j] == -1){
+                        for(int k = i; k >= 0; k--){
+                            if(a[k][j] == 0){
+                                y[j]++;
+                            }
+                        }
+                        x[j] = i;
+                    }
+                    for(int k = i; k >= 0; k--){
+                        if(a[k][j] != 0){
+                            a[i][j] = a[k][j];//从k，j下落到i，j
+                            a[k][j] = 0;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        QPropertyAnimation *anim1[64];
+        QParallelAnimationGroup *group = new QParallelAnimationGroup;
+        updateBaoshi(a);
+        for(int i = 0;i<8;i++){
+            for(int j = 0; j<8;j++){
+                jew[i][j]->changePicture(a[i][j]);
+            }
+        }
+        if(init == 0){//只有
+            int index = 0;
+            for(int j=0;j<8;j++){
+                for(int i = x[j];i>=0;i--){
+                    anim1[index] = new QPropertyAnimation(jew[i][j],"geometry");
+                    anim1[index]->setDuration(500);
+                    anim1[index]->setStartValue(QRect(weizhiY(j), weizhiX(i-y[j]), 61, 61));
+                    anim1[index]->setEndValue(QRect(weizhiY(j), weizhiX(i), 61, 61));
+                    group->addAnimation(anim1[index]);
+                    index++;
+                }
+            }
+            group->start();
+            QTime time;
+            time.start();
+            while(time.elapsed() < 600){
+                QCoreApplication::processEvents();
+            }
+        }
+    }
+>>>>>>> 15ff1fbf27d20b155cd7902649e198dbe7d98dd5
+

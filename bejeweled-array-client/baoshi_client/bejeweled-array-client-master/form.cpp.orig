@@ -1,0 +1,345 @@
+﻿#include "form.h"
+#include "ui_form.h"
+#include "QMessageBox"
+#include "QTextCodec.h"
+#include <QIcon>
+#include <QDebug>
+#include <QString>
+#include <QHBoxLayout>
+#include <QMouseEvent>
+#include "arrayMethod.h"
+#include <cstdlib>
+#include <ctime>
+
+QGraphicsScene *scene_1;
+QGraphicsScene *scene_2;
+Form::Form(QWidget *parent) :
+    QWidget(parent),
+    ui(new Ui::Form)
+{
+    this->setWindowTitle("宝石迷阵");
+    this->setWindowIcon(QIcon(":/new/prefix1/ICON/13369429051CA2411D99F227A90D19CB9BE4EA10C2.jpg"));
+    ui->setupUi(this);
+    socket=new QTcpSocket();
+    ui->timer->setStyleSheet("QLCDNumber{border:none;background:transparent;}");
+
+    //连接信号槽
+    QObject::connect(socket, &QTcpSocket::readyRead, this, &Form::socket_Read_Data);
+    QObject::connect(socket, &QTcpSocket::disconnected, this, &Form::socket_Disconnected);
+
+    ui->lineEdit_Ip->setText("127.0.0.1");
+
+    //添加menu
+    auto layout = new QHBoxLayout(this);
+    QMenuBar *menubar = new QMenuBar(this);
+    layout->setMenuBar(menubar);
+    Qtime = new QAction(this);                    //比赛时间
+    Qtime->setText("时间");
+    connect(Qtime, SIGNAL(triggered()), this,SLOT(slot_set_time()));
+    music_on = new QAction(this);
+    music_on->setText("音乐开");
+    connect(music_on, SIGNAL(triggered()), this,SLOT(slot_music_on()));
+    music_off = new QAction(this);
+    music_off->setText("音乐关");
+    connect(music_off, SIGNAL(triggered()), this, SLOT(slot_music_off()));
+    music_turn = new QAction(this);
+    music_turn->setText("更换音乐");
+    connect(music_turn, SIGNAL(triggered()), this, SLOT(slot_music_change()));
+    hint = new QAction(this);
+    hint->setText("详细信息");
+    connect(hint, SIGNAL(triggered()), this, SLOT(slot_hint()));
+    setting = new QMenu("设置");
+    setting->addAction(music_on);
+    setting->addAction(music_off);
+    setting->addAction(music_turn);
+    setting->addAction(Qtime);
+    menubar->addMenu(setting);
+    help = new QMenu("帮助");
+    help->addAction(hint);
+    menubar->addMenu(help);
+    layout->addWidget(this);
+    layout->addWidget(menubar);
+
+
+    //测试己方宝石
+    scene_1 = new QGraphicsScene(ui->graphicsView);
+    scene_1->setSceneRect(0,67,830,620);
+    ui->graphicsView->setScene(scene_1);
+
+    //添加对方宝石
+    scene_2 = new QGraphicsScene(ui->graphicsView_2);
+    scene_2->setSceneRect(900,67,630,620);
+    ui->graphicsView_2->setScene(scene_2);
+
+    link();
+    if(socket->waitForReadyRead(3000)){
+    socket->write("?");
+    socket->flush();
+    }
+
+
+    //初始化音乐
+    player1->setMedia(QUrl("qrc:/new/prefix1/media/media/3.ogg"));
+    player2->setMedia(QUrl("qrc:/new/prefix1/media/media/1.ogg"));
+    player2->setVolume(50);
+    player1->setVolume(50);
+    player1->play();
+
+    //在这里直接连接,可以写等待函数
+
+}
+
+
+Form::~Form()
+{
+    socket->close();
+    socket->deleteLater();
+    delete ui;
+}
+
+void Form::init(){
+
+    srand(seed);
+    updateBaoshi(a);
+    for(int i = 0; i <8; i++){
+        for(int j = 0; j < 8; j++){
+            jew[i][j] = new Jewel(i,j,a[i][j],1);
+            scene_1->addWidget(jew[i][j]->getbutton());
+        }
+    }
+    if(xiaochu(a)){
+        xialuo(a);
+        updateBaoshi(a);
+        while(xiaochu(a)!=0){
+             xialuo(a);
+             updateBaoshi(a);
+        }
+        for(int i = 0;i<8;i++){
+            for(int j = 0; j<8;j++){
+                jew[i][j]->changePicture(a[i][j]);
+            }
+        }
+    }
+
+    //绑定槽函数
+    for(int i = 0; i <8; i++){
+        for(int j = 0; j < 8; j++){
+           connect(jew[i][j],SIGNAL(jewPosSignal(int ,int )),this,SLOT(send(int ,int )));
+           connect(jew[i][j],SIGNAL(jewPosSignal(int ,int )),this,SLOT(change(int ,int )));
+        }
+    }
+
+<<<<<<< HEAD
+    updateBaoshi(a2);
+    for(int i = 0; i <8; i++){
+        for(int j = 0; j < 8; j++){
+            jew2[i][j] = new Jewel(i,j,a2[i][j],2);
+            scene_2->addWidget(jew2[i][j]->getbutton());
+        }
+    }
+    if(xiaochu(a2)){                          //刷新宝石直到不能消除
+        xialuo(a2);
+        updateBaoshi(a2);
+        while(xiaochu(a2)!=0){
+             xialuo(a2);
+             updateBaoshi(a2);
+        }
+        for(int i = 0;i<8;i++){
+            for(int j = 0; j<8;j++){
+                jew2[i][j]->changePicture(a2[i][j]);
+            }
+        }
+    }
+
+    //初始化音乐
+    player1->setMedia(QUrl("qrc:/new/prefix1/media/media/3.ogg"));
+    player2->setMedia(QUrl("qrc:/new/prefix1/media/media/1.ogg"));
+    player2->setVolume(50);
+    player1->setVolume(50);
+    player1->play();
+
+    //在这里直接连接,可以写等待函数
+
+}
+
+
+Form::~Form()
+{
+    socket->close();
+    socket->deleteLater();
+    delete ui;
+=======
+>>>>>>> 92be16164cb6ba41ba8bfc68d678e668a4ee497e
+}
+
+
+void Form::change(int x,int y){
+    Jewel* btn = (Jewel*)sender();// 获取到了发送该信号按钮的指针
+    if(selectX1 == -1){
+        selectX1=btn->getX();
+        selectY1=btn->getY();
+        jew[selectX1][selectY1]->setStyleSheet("QPushButton{border:none;background:transparent;border:3px solid #66FFFF;}");//改变样式表
+    }
+    else if(selectX2 == -1){
+        selectX2 = btn->getX();
+        selectY2 = btn->getY();
+        if((selectX1==selectX2-1&&selectY2==selectY1)||(selectX1==selectX2+1&&selectY2==selectY1)||(selectX1==selectX2&&selectY2-1==selectY1)||(selectX1==selectX2&&selectY2+1==selectY1)){
+            jew[selectX2][selectY2]->setStyleSheet("QPushButton{border:none;background:transparent;border:3px solid #66FFFF;}");
+            int temp = a[selectX1][selectY1];
+            a[selectX1][selectY1] = a[selectX2][selectY2];
+            a[selectX2][selectY2] = temp;//交换矩阵
+            if(xiaochu(a)){
+                xialuo(a);
+                updateBaoshi(a);
+                while(xiaochu(a)!=0){
+                     xialuo(a);
+                     updateBaoshi(a);
+                }
+                for(int i = 0;i<8;i++){
+                    for(int j = 0; j<8;j++){
+                        jew[i][j]->changePicture(a[i][j]);
+                    }
+                }
+            }
+            else{
+                int temp = a[selectX1][selectY1];
+                a[selectX1][selectY1] = a[selectX2][selectY2];
+                a[selectX2][selectY2] = temp;//不能这样做，换回来
+            }
+            //动画
+
+            //重置样式表
+            jew[selectX2][selectY2]->setStyleSheet("QPushButton{border:none;background:transparent;}");
+            jew[selectX1][selectY1]->setStyleSheet("QPushButton{border:none;background:transparent;}");
+            selectX1 = selectX2 = selectY1 = selectY2 = -1;
+        }
+        else{
+            jew[selectX1][selectY1]->setStyleSheet("QPushButton{border:none;background:transparent;}");
+            selectX1=btn->getX();
+            selectY1=btn->getY();
+            jew[selectX1][selectY1]->setStyleSheet("QPushButton{border:none;background:transparent;border:3px solid #66FFFF;}");
+            selectX2 = selectY2 = -1;
+        }
+    }
+    if(!checkBaoshi(a)){
+        QMessageBox::StandardButton result=QMessageBox::critical(this, "faild","你输了");
+    }
+}
+
+void Form::send(int x, int y){
+    QString info = QString::number(x);
+    info.append(",").append(QString::number(y)).append(",");
+    socket->write(info.toLocal8Bit());
+    socket->flush();
+    this->ui->lineEdit_Ip->setText(info);
+
+ }
+//信息发送的函数,等ui写好就可以用了
+//void Form::on_pushButton_Send_clicked()
+//{
+
+//    ui->textEdit_Recv->insertPlainText(tr("服务器：")+ui->textEdit_Send->toPlainText()+"\n");
+//    socket->write(ui->textEdit_Send->toPlainText().toLocal8Bit());
+//    socket->flush();
+//    ui->textEdit_Send->setText("");
+//}
+
+
+void Form::link()
+{
+        QString IP;
+        int port = 6000;
+        //获取IP地址
+        IP = "127.0.0.1";
+        //重置初始化
+        socket->abort();
+        //连接服务器
+        socket->connectToHost(IP, port);
+        //等待连接成功
+        if(!socket->waitForConnected(30000))
+        {
+            QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
+            QMessageBox::warning(this,tr("消息"),tr("连接失败！请重新连接"),QMessageBox::Yes);
+            return;
+        }
+        QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
+        QMessageBox::information(this,tr("消息"),tr("连接成功"),QMessageBox::Yes);
+        socket->write("1,1");
+        socket->flush();
+        isinit = false;
+}
+
+
+
+void Form::socket_Read_Data()
+{
+    QByteArray buffer;
+    //读取缓冲区数据
+    buffer = socket->readAll();
+    if(!isinit){
+        seed = QString::fromLocal8Bit(buffer).toInt();
+        init();
+        isinit = true;
+    }
+    if(!buffer.isEmpty())
+    {
+        QString str = QString::fromLocal8Bit(buffer);
+        this->ui->lineEdit_Ip->setText(str);
+//        QStringList strList = str.split(" ");
+
+        //伟大的许一涵实现了接口对接
+        //todo  要改成change remote
+//        change(strList[0].toInt(),strList[1].toInt());
+//        std::cout<<"接收到了"<<strList[0].toInt()<<strList[1].toInt()<<"\n";
+    }
+}
+
+
+void Form::socket_Disconnected()
+{
+    //发送按键失能
+    isinit = false;
+// todo 等待判定
+}
+
+//实现槽函数
+void Form::slot_music_on()
+{
+     player1->play();
+}
+
+void Form::slot_music_off()
+{
+    player1->stop();
+}
+
+void Form::slot_music_change()
+{
+    player2->play();
+}
+
+void Form::slot_hint()
+{
+
+}
+
+
+
+void Form::mouseMoveEvent(QMouseEvent *ev){
+   //todo
+}
+
+void Form::mousePressEvent(QMouseEvent *ev){
+
+}
+
+void Form::mouseReleaseEvent(QMouseEvent *ev){
+    //todo
+}
+
+
+
+
+
+
+

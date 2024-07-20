@@ -1,0 +1,21 @@
+[33m713db8d[m[33m ([m[1;36mHEAD[m[33m)[m HEAD@{0}: reset: moving to 713db8d
+[33me8cb567[m HEAD@{1}: reset: moving to e8cb567
+[33m19b958c[m[33m ([m[1;31morigin/master[m[33m, [m[1;32mmaster[m[33m)[m HEAD@{2}: reset: moving to 19b958c
+[33md36a42c[m HEAD@{3}: checkout: moving from master to d36a42c4fd4f6125767319302b21e1c9c9968b41
+[33m19b958c[m[33m ([m[1;31morigin/master[m[33m, [m[1;32mmaster[m[33m)[m HEAD@{4}: reset: moving to HEAD
+[33m19b958c[m[33m ([m[1;31morigin/master[m[33m, [m[1;32mmaster[m[33m)[m HEAD@{5}: pull: Fast-forward
+[33me8cb567[m HEAD@{6}: reset: moving to HEAD
+[33me8cb567[m HEAD@{7}: pull: Fast-forward
+[33m713db8d[m[33m ([m[1;36mHEAD[m[33m)[m HEAD@{8}: reset: moving to HEAD
+[33m713db8d[m[33m ([m[1;36mHEAD[m[33m)[m HEAD@{9}: reset: moving to HEAD
+[33m713db8d[m[33m ([m[1;36mHEAD[m[33m)[m HEAD@{10}: pull: Fast-forward
+[33m567c678[m HEAD@{11}: reset: moving to HEAD
+[33m567c678[m HEAD@{12}: checkout: moving from 5e5643bb1cb6d8efc9398389ba22567c4236bd75 to master
+[33m5e5643b[m HEAD@{13}: cherry-pick: 2022年11月20日15:08:06 xyh 删除了不必要的注释
+[33m567c678[m HEAD@{14}: checkout: moving from master to 567c6787ede44daa197c408c5f5202ec92d1a1de
+[33m567c678[m HEAD@{15}: reset: moving to HEAD
+[33m567c678[m HEAD@{16}: commit: ui 调整
+[33ma443155[m HEAD@{17}: commit: 按钮
+[33mbd1ee32[m HEAD@{18}: commit: 初步的ui修改
+[33m5c307fa[m HEAD@{19}: pull origin master: Fast-forward
+[33mc2cd428[m HEAD@{20}: initial pull
